@@ -70,6 +70,42 @@ app.post('/updateCartStatus', async (req, res) => {
   }
 });
 
+// Route pour deleteCart
+app.post('/deleteCart', async (req, res) => {
+  const { email, username } = req.body;
+
+  if (!email || !username) {
+    return res.status(400).json({ message: 'Email and username are required' });
+  }
+
+  try {
+    // Rechercher le panier correspondant
+    const existingCart = await prisma.cart.findFirst({
+      where: {
+        email: email,
+        username: username,
+      },
+    });
+
+    if (existingCart) {
+      // Supprimer le panier si trouvé
+      await prisma.cart.delete({
+        where: {
+          id: existingCart.id,
+        },
+      });
+      return res.status(200).json({ message: `Panier pour ${email} supprimé.` });
+    } else {
+      return res.status(404).json({ message: 'Panier non trouvé.' });
+    }
+  } catch (error) {
+    console.error('Erreur lors de la suppression du panier :', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
 // Création du serveur HTTPS
 const httpsServer = https.createServer(options, app);
 
