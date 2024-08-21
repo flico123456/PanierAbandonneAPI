@@ -1,18 +1,26 @@
-// server.js
-
 const { PrismaClient } = require('@prisma/client');
 const express = require('express');
-const cors = require('cors'); // Import du middleware cors
+const cors = require('cors');
+const https = require('https');
+const fs = require('fs');
 
 const app = express();
 const prisma = new PrismaClient();
-
-// Configuration de CORS pour autoriser toutes les origines
-app.use(cors());
+const port = 3007; // Port de votre serveur HTTPS
 
 // Middleware pour analyser le JSON dans les requêtes
 app.use(express.json());
 
+// Middleware pour autoriser les requêtes CORS depuis votre domaine
+app.use(cors());
+
+// Options pour la configuration du serveur HTTPS
+const options = {
+  key: fs.readFileSync('/etc/letsencrypt/live/api.maillotsoraya-conception.com/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/api.maillotsoraya-conception.com/fullchain.pem')
+};
+
+// Route pour updateCartStatus
 app.post('/updateCartStatus', async (req, res) => {
   const { email, username, en_attente, email_envoye } = req.body;
 
@@ -62,8 +70,10 @@ app.post('/updateCartStatus', async (req, res) => {
   }
 });
 
-// Démarrer le serveur
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Création du serveur HTTPS
+const httpsServer = https.createServer(options, app);
+
+// Démarrer le serveur HTTPS
+httpsServer.listen(port, () => {
+  console.log(`HTTPS Server running on port ${port}`);
 });
